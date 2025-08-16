@@ -1,0 +1,48 @@
+# MCP Gateway Configuration - Security Demo
+gateway:
+  name: "pen-shop-mcp-gateway"
+  version: "1.0.0"
+  port: 8080
+  
+  # Security Configuration
+  security:
+    enable_filtering: true
+    block_secrets: true
+    secret_patterns:
+      - "(?i)(api[_-]?key|apikey|access[_-]?token|secret[_-]?key)"
+      - "(?i)(password|passwd|pwd)"
+      - "(?i)(bearer\\s+[a-zA-Z0-9\\-\\._~\\+\\/]+=*)"
+      - "(?i)(sk-[a-zA-Z0-9]{20,})"
+    
+    prompt_injection:
+      enabled: true
+      severity_threshold: "medium"
+      patterns:
+        - "(?i)(ignore\\s+(previous|all)\\s+instructions)"
+        - "(?i)(system\\s*:.*overr?ide)"
+        - "(?i)(act\\s+as\\s+a\\s+different)"
+    
+    rate_limiting:
+      enabled: true
+      requests_per_minute: 60
+      burst_limit: 10
+    
+    allowed_tools:
+      - "get_pen_catalog"
+      - "get_pen_details"
+      - "search_pens"
+      - "recommend_pens"
+
+  servers:
+    pen-shop:
+      url: "http://pen-mcp-server:3001"
+      timeout: 30s
+      retry_count: 3
+      
+  logging:
+    level: "INFO"
+    format: "json"
+    security_events:
+      log_blocked_requests: true
+      log_rate_limit_hits: true
+      log_prompt_injections: true

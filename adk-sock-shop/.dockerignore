@@ -1,6 +1,0 @@
-*
-!/agents
-!/apps
-!/docker
-!/pyproject.toml
-!/uv.lock

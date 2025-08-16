@@ -1,0 +1,255 @@
+# Pen Shop AI Agent - Security Demo
+version: '3.8'
+
+services:
+  # Frontend - The sales interface
+  pen-frontend:
+    build: ./front-end
+    ports:
+      - "3000:8080"
+    depends_on:
+      - pen-catalogue
+      - pen-user
+      - pen-cart
+      - pen-orders
+      - pen-payment
+      - mcp-gateway
+    environment:
+      - PEN_CATALOGUE_URL=http://pen-catalogue:80
+      - PEN_USER_URL=http://pen-user:80
+      - PEN_CART_URL=http://pen-cart:80
+      - PEN_ORDERS_URL=http://pen-orders:80
+      - PEN_PAYMENT_URL=http://pen-payment:80
+      - MCP_GATEWAY_URL=http://mcp-gateway:8080
+    security_opt:
+      - no-new-privileges:true
+    user: "1001:1001"
+    read_only: true
+    tmpfs:
+      - /tmp
+    networks:
+      - pen-network
+
+  # Pen Catalogue Service
+  pen-catalogue:
+    build: ./catalogue
+    environment:
+      - MYSQL_ROOT_PASSWORD=fake_password
+      - MYSQL_DATABASE=pendb
+    depends_on:
+      - pen-catalogue-db
+    security_opt:
+      - no-new-privileges:true
+    user: "1001:1001"
+    read_only: true
+    tmpfs:
+      - /tmp
+    networks:
+      - pen-network
+      - pen-db-network
+
+  pen-catalogue-db:
+    image: mysql:5.7
+    environment:
+      - MYSQL_ROOT_PASSWORD=fake_password
+      - MYSQL_DATABASE=pendb
+    volumes:
+      - pen-catalogue-data:/var/lib/mysql
+    security_opt:
+      - no-new-privileges:true
+    user: "999:999"
+    networks:
+      - pen-db-network
+
+  # User Management Service
+  pen-user:
+    build: ./user
+    depends_on:
+      - pen-user-db
+    environment:
+      - MONGO_HOST=pen-user-db:27017
+    security_opt:
+      - no-new-privileges:true
+    user: "1001:1001"
+    read_only: true
+    tmpfs:
+      - /tmp
+    networks:
+      - pen-network
+      - pen-db-network
+
+  pen-user-db:
+    image: mongo:3.4
+    volumes:
+      - pen-user-data:/data/db
+    security_opt:
+      - no-new-privileges:true
+    user: "999:999"
+    networks:
+      - pen-db-network
+
+  # Shopping Cart Service
+  pen-cart:
+    build: ./carts
+    depends_on:
+      - pen-cart-db
+    environment:
+      - REDIS_URL=redis://pen-cart-db:6379
+    security_opt:
+      - no-new-privileges:true
+    user: "1001:1001"
+    read_only: true
+    tmpfs:
+      - /tmp
+    networks:
+      - pen-network
+      - pen-db-network
+
+  pen-cart-db:
+    image: redis:3.2-alpine
+    volumes:
+      - pen-cart-data:/data
+    security_opt:
+      - no-new-privileges:true
+    user: "999:999"
+    networks:
+      - pen-db-network
+
+  # Orders Service
+  pen-orders:
+    build: ./orders
+    depends_on:
+      - pen-orders-db
+    environment:
+      - MONGO_HOST=pen-orders-db:27017
+    security_opt:
+      - no-new-privileges:true
+    user: "1001:1001"
+    read_only: true
+    tmpfs:
+      - /tmp
+    networks:
+      - pen-network
+      - pen-db-network
+
+  pen-orders-db:
+    image: mongo:3.4
+    volumes:
+      - pen-orders-data:/data/db
+    security_opt:
+      - no-new-privileges:true
+    user: "999:999"
+    networks:
+      - pen-db-network
+
+  # Payment Service
+  pen-payment:
+    build: ./payment
+    security_opt:
+      - no-new-privileges:true
+    user: "1001:1001"
+    read_only: true
+    tmpfs:
+      - /tmp
+    networks:
+      - pen-network
+
+  # Message Queue
+  pen-queue-master:
+    image: rabbitmq:3.6.8
+    security_opt:
+      - no-new-privileges:true
+    user: "999:999"
+    networks:
+      - pen-network
+
+  # Shipping Service
+  pen-shipping:
+    build: ./shipping
+    depends_on:
+      - pen-queue-master
+    environment:
+      - ZIPKIN=http://zipkin:9411/api/v1/spans
+      - RABBIT_HOST=pen-queue-master
+    security_opt:
+      - no-new-privileges:true
+    user: "1001:1001"
+    read_only: true
+    tmpfs:
+      - /tmp
+    networks:
+      - pen-network
+
+  # ⭐ THE STAR OF OUR SECURITY DEMO ⭐
+  pen-mcp-server:
+    build: ./pen-mcp-server
+    ports:
+      - "3001:3001"
+    depends_on:
+      - pen-catalogue
+      - pen-user
+      - pen-orders
+    environment:
+      - PEN_CATALOGUE_URL=http://pen-catalogue:80
+      - PEN_USER_URL=http://pen-user:80
+      - PEN_ORDERS_URL=http://pen-orders:80
+      - NODE_ENV=production
+    security_opt:
+      - no-new-privileges:true
+    user: "1001:1001"
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    networks:
+      - pen-network
+
+  # 🛡️ MCP GATEWAY - The Security Hero 🛡️
+  mcp-gateway:
+    build: ./mcp-gateway
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./mcp-gateway/config.yaml:/app/config.yaml:ro
+    environment:
+      - CONFIG_FILE=/app/config.yaml
+      - LOG_LEVEL=INFO
+    security_opt:
+      - no-new-privileges:true
+    user: "1001:1001"
+    read_only: true
+    tmpfs:
+      - /tmp
+    networks:
+      - pen-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Monitoring
+  zipkin:
+    image: openzipkin/zipkin
+    ports:
+      - "9411:9411"
+    networks:
+      - pen-network
+
+# Network Segmentation for Security
+networks:
+  pen-network:
+    driver: bridge
+  pen-db-network:
+    driver: bridge
+    internal: true
+
+# Persistent Storage
+volumes:
+  pen-catalogue-data:
+  pen-user-data:
+  pen-cart-data:
+  pen-orders-data:

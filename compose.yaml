@@ -1,0 +1,80 @@
+# Pen Shop Security Demo - Minimal Configuration
+services:
+  # ⭐ THE STAR OF OUR SECURITY DEMO ⭐
+  pen-mcp-server:
+    build: ./pen-mcp-server
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+    # Security hardening
+    security_opt:
+      - no-new-privileges:true
+    user: "1001:1001"
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3001/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - pen-network
+
+  # 🛡️ MCP GATEWAY - The Security Hero 🛡️
+  mcp-gateway:
+    build: ./mcp-gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      - pen-mcp-server
+    environment:
+      - LOG_LEVEL=INFO
+      - NODE_ENV=production
+    # Security hardening
+    security_opt:
+      - no-new-privileges:true
+    user: "1001:1001"
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - pen-network
+
+  # Simple frontend for demo
+  pen-frontend:
+    image: nginx:alpine
+    ports:
+      - "3000:80"
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+    depends_on:
+      - mcp-gateway
+    security_opt:
+      - no-new-privileges:true
+    user: "101:101"
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx
+      - /var/run
+    networks:
+      - pen-network
+
+# Network for isolation
+networks:
+  pen-network:
+    driver: bridge

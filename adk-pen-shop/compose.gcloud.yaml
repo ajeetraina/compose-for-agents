@@ -1,0 +1,45 @@
+services:
+  pen-mcp-server:
+    image: gcr.io/${GOOGLE_CLOUD_PROJECT}/pen-mcp-server:latest
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - MCP_GATEWAY_URL=http://mcp-gateway:8080
+    security_opt:
+      - no-new-privileges:true
+    user: "1001:1001"
+    read_only: true
+    tmpfs:
+      - /tmp
+
+  mcp-gateway:
+    image: gcr.io/${GOOGLE_CLOUD_PROJECT}/mcp-gateway:latest
+    ports:
+      - "8080:8080"
+    environment:
+      - LOG_LEVEL=INFO
+      - ENABLE_SECURITY_SCANNING=true
+      - BLOCK_SECRETS=true
+      - RATE_LIMIT_ENABLED=true
+    security_opt:
+      - no-new-privileges:true
+    user: "1001:1001"
+    read_only: true
+    tmpfs:
+      - /tmp
+
+  pen-frontend:
+    image: gcr.io/${GOOGLE_CLOUD_PROJECT}/pen-frontend:latest
+    ports:
+      - "80:8080"
+    depends_on:
+      - mcp-gateway
+    environment:
+      - MCP_GATEWAY_URL=http://mcp-gateway:8080
+    security_opt:
+      - no-new-privileges:true
+    user: "1001:1001"
+    read_only: true
+    tmpfs:
+      - /tmp

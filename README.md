@@ -1,4 +1,4 @@
-# Compose for Agents Demos
+:q# Compose for Agents Demos
 
 ## Prerequisites
 
