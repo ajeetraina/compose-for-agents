@@ -37,23 +37,23 @@ const logger = winston.createLogger({
 
 // Security patterns
 const SECRET_PATTERNS = [
-  /(api[_-]?key|apikey|access[_-]?token|secret[_-]?key)\s*[:=]\s*['"]*([a-zA-Z0-9\-_]{10,})['"]*/i, 
-  /(password|passwd|pwd)\s*[:=]\s*['"]*([^\s'"]{3,})['"]*/i, 
-  /(bearer\s+[a-zA-Z0-9\-\._~\+\/i]+=*)/,
-  /(sk-[a-zA-Z0-9]{20,})/i,
-  /(ghp_[a-zA-Z0-9]{36})/i,
-  /(gho_[a-zA-Z0-9]{36})/i
+  /(?i)(api[_-]?key|apikey|access[_-]?token|secret[_-]?key)\s*[:=]\s*['"]*([a-zA-Z0-9\-_]{10,})['"]*/, 
+  /(?i)(password|passwd|pwd)\s*[:=]\s*['"]*([^\s'"]{3,})['"]*/, 
+  /(?i)(bearer\s+[a-zA-Z0-9\-\._~\+\/]+=*)/,
+  /(?i)(sk-[a-zA-Z0-9]{20,})/,
+  /(?i)(ghp_[a-zA-Z0-9]{36})/,
+  /(?i)(gho_[a-zA-Z0-9]{36})/
 ];
 
 const INJECTION_PATTERNS = [
-  /(ignore\s+(previous|all|above)\s+(instructions|prompts|rules))/i,
-  /(system\s*[:]*\s*(overr?ide|bypass|disable))/i,
-  /(act\s+as\s+a\s+(different|new)\s+(assistant|ai|bot))/i,
-  /(forget\s+(everything|all)\s+(above|before|previous))/i,
-  /(new\s+(instructions|prompt|system|role))/i,
-  /(developer\s+mode|admin\s+mode|debug\s+mode)/i,
-  /(show\s+(me\s+)?(all\s+)?(secrets|keys|passwords|tokens))/i,
-  /(execute\s+(code|command|script))/i
+  /(?i)(ignore\s+(previous|all|above)\s+(instructions|prompts|rules))/,
+  /(?i)(system\s*[:]*\s*(overr?ide|bypass|disable))/,
+  /(?i)(act\s+as\s+a\s+(different|new)\s+(assistant|ai|bot))/,
+  /(?i)(forget\s+(everything|all)\s+(above|before|previous))/,
+  /(?i)(new\s+(instructions|prompt|system|role))/,
+  /(?i)(developer\s+mode|admin\s+mode|debug\s+mode)/,
+  /(?i)(show\s+(me\s+)?(all\s+)?(secrets|keys|passwords|tokens))/,
+  /(?i)(execute\s+(code|command|script))/
 ];
 
 let securityStats = {

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🖊️ Pen Shop - Simple & Working</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { color: #333; text-align: center; margin-bottom: 30px; }
+        .status { padding: 15px; margin: 15px 0; border-radius: 8px; text-align: center; font-weight: bold; }
+        .success { background: #d4edda; color: #155724; border: 2px solid #c3e6cb; }
+        .buttons { text-align: center; margin: 20px 0; }
+        button { background: #007bff; color: white; border: none; padding: 12px 20px; border-radius: 5px; margin: 8px; cursor: pointer; font-size: 14px; }
+        button:hover { background: #0056b3; }
+        #result { margin: 20px 0; padding: 15px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px; white-space: pre-wrap; font-family: monospace; }
+        .endpoint { font-family: monospace; background: #e9ecef; padding: 2px 6px; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🖊️ Pen Shop Agent Development Kit</h1>
+        
+        <div class="status success">
+            🎉 Frontend is now working!
+        </div>
+        
+        <div class="buttons">
+            <button onclick="testHealth()">Test Health</button>
+            <button onclick="testPens()">Get Pen Catalog</button>
+            <button onclick="testSearch()">Test Search</button>
+            <button onclick="testDirect()">Test Direct Connection</button>
+        </div>
+        
+        <div id="result">Click any button above to test the services...</div>
+        
+        <h3>📋 Available Endpoints:</h3>
+        <p>
+            <span class="endpoint">GET /health</span> - Nginx health check<br>
+            <span class="endpoint">GET /api/health</span> - Pen server health<br>
+            <span class="endpoint">GET /api/pens</span> - Get pen catalog<br>
+            <span class="endpoint">GET /api/pens/:id</span> - Get specific pen<br>
+            <span class="endpoint">POST /api/search</span> - Search pens
+        </p>
+        
+        <p><strong>Direct access:</strong><br>
+        Pen Server: <a href="http://localhost:3001/health" target="_blank">http://localhost:3001</a><br>
+        Gateway: <a href="http://localhost:8080" target="_blank">http://localhost:8080</a></p>
+    </div>
+    
+    <script>
+        const result = document.getElementById('result');
+        
+        async function testHealth() {
+            result.textContent = '⏳ Testing nginx health...';
+            try {
+                const response = await fetch('/health');
+                const text = await response.text();
+                result.textContent = `✅ Nginx Health OK!\nStatus: ${response.status}\nResponse: ${text}`;
+            } catch (error) {
+                result.textContent = `❌ Health test failed: ${error.message}`;
+            }
+        }
+        
+        async function testPens() {
+            result.textContent = '⏳ Getting pen catalog...';
+            try {
+                const response = await fetch('/api/pens');
+                const data = await response.json();
+                result.textContent = `✅ Pen Catalog Retrieved!\nStatus: ${response.status}\nData:\n${JSON.stringify(data, null, 2)}`;
+            } catch (error) {
+                result.textContent = `❌ Pen catalog failed: ${error.message}`;
+            }
+        }
+        
+        async function testSearch() {
+            result.textContent = '⏳ Testing search...';
+            try {
+                const response = await fetch('/api/search', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: 'fountain' })
+                });
+                const data = await response.json();
+                result.textContent = `✅ Search Works!\nStatus: ${response.status}\nResults:\n${JSON.stringify(data, null, 2)}`;
+            } catch (error) {
+                result.textContent = `❌ Search failed: ${error.message}`;
+            }
+        }
+        
+        async function testDirect() {
+            result.textContent = '⏳ Testing direct connection to pen server...';
+            try {
+                const response = await fetch('http://localhost:3001/api/pens');
+                const data = await response.json();
+                result.textContent = `✅ Direct Connection Works!\nStatus: ${response.status}\nData:\n${JSON.stringify(data, null, 2)}`;
+            } catch (error) {
+                result.textContent = `❌ Direct connection failed: ${error.message}`;
+            }
+        }
+        
+        // Auto-test on load
+        window.onload = () => setTimeout(testHealth, 500);
+    </script>
+</body>
+</html>
