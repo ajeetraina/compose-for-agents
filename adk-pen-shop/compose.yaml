@@ -1,5 +1,4 @@
-# Pen Shop AI Agent - Security Demo
-version: '3.8'
+
 
 services:
   # Frontend - The sales interface
