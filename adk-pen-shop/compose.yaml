@@ -48,6 +48,7 @@ services:
       - pen-db-network
 
   pen-catalogue-db:
+    platform: linux/amd64
     image: mysql:5.7
     environment:
       - MYSQL_ROOT_PASSWORD=fake_password
@@ -155,6 +156,7 @@ services:
 
   # Message Queue
   pen-queue-master:
+    platform: linux/amd64 
     image: rabbitmq:3.6.8
     security_opt:
       - no-new-privileges:true
